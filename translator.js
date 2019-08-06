@@ -1,12 +1,26 @@
-
 const TelegramBot = require('node-telegram-bot-api');
 const translate = require('@vitalets/google-translate-api');
+const say = require('say');
+const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
 
-// replace the value below with the Telegram token you receive from @BotFather
 const token = '931046005:AAFAZ10TKmHcYpVfmMl2nVXViHOCYJIEK4I';
 
-// Create a bot that uses 'polling' to fetch new updates
+let file = fs.readFileSync('./voices/voice.mp3');
+
 const bot = new TelegramBot(token, {polling: true});
+
+function convert(input, output, callback) {
+    ffmpeg(input)
+        .output(output)
+        .on('end', function() {
+            console.log('conversion ended');
+            callback(null);
+        }).on('error', function(err){
+        console.log('error: ', e.code, e.msg);
+        callback(err);
+    }).run();
+}
 
 // Matches "/echo [whatever]"
 bot.onText(/\/echo (.+)/, (msg, match) => {
@@ -29,11 +43,23 @@ bot.on('message', (msg) => {
     translate(msg.text, {to: 'en'}).then(res => {
         console.log(`${msg.chat.first_name} ${msg.chat.last_name || ''}`);
         console.log(msg.text);
-        bot.sendMessage(chatId, res.text);
+
+
+        say.export(res.text, 'Samantha', 1, './voices/voice.wav', function(err) {
+            if (err) {
+                return console.error(err);
+            }
+
+
+            convert('./voices/voice.wav', './voices/voice.mp3', function(err){
+                if(!err) {
+                    console.log(file);
+                    bot.sendMessage(chatId, res.text);
+                    bot.sendVoice(chatId, file);
+                }
+            });
+        });
     }).catch(err => {
         console.error(err);
     });
-
-    console.log();
-    // send a message to the chat acknowledging receipt of their message
 });
