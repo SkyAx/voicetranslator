@@ -2,6 +2,7 @@
 
 # source
 /voices
+/config
 
 # dependencies
 /node_modules

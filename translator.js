@@ -4,9 +4,10 @@ const say = require('say');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 
-const token = '931046005:AAGOjRJWikX0oAMGx-n-Dg_WO4RYjpUFs38';
+const conf = require('./config/config');
 
-const bot = new TelegramBot(token, {polling: true});
+
+const bot = new TelegramBot(conf.key, {polling: true});
 
 function convert(input, output, callback) {
     ffmpeg(input)
