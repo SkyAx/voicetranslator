@@ -4,9 +4,7 @@ const say = require('say');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 
-const token = '931046005:AAFAZ10TKmHcYpVfmMl2nVXViHOCYJIEK4I';
-
-let file = fs.readFileSync('./voices/voice.mp3');
+const token = '931046005:AAGOjRJWikX0oAMGx-n-Dg_WO4RYjpUFs38';
 
 const bot = new TelegramBot(token, {polling: true});
 
@@ -39,27 +37,48 @@ bot.onText(/\/echo (.+)/, (msg, match) => {
 // messages.
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
+    let message = msg.text;
 
-    translate(msg.text, {to: 'en'}).then(res => {
-        console.log(`${msg.chat.first_name} ${msg.chat.last_name || ''}`);
-        console.log(msg.text);
+    translation(message, chatId, isVarMessage(message));
+    console.log(`${msg.chat.first_name} ${msg.chat.last_name || ''}`);
+    console.log(msg.text);
+});
 
+function translation(msg, chatId, isVar = false, lang =  'en') {
 
-        say.export(res.text, 'Samantha', 1, './voices/voice.wav', function(err) {
-            if (err) {
-                return console.error(err);
-            }
+    translate(msg, {to: lang}).then(res => {
+        let resText = res.text;
 
+        if(isVar) {
+            resText = resText.replace('var:', '').trim().replace(/\s/g, '_');
+        } else {
+            sayIt(resText, chatId);
+        }
 
-            convert('./voices/voice.wav', './voices/voice.mp3', function(err){
-                if(!err) {
-                    console.log(file);
-                    bot.sendMessage(chatId, res.text);
-                    bot.sendVoice(chatId, file);
-                }
-            });
-        });
+        bot.sendMessage(chatId, resText);
+
     }).catch(err => {
         console.error(err);
     });
-});
+}
+
+function sayIt(msg, chatId) {
+    say.export(msg, 'Samantha', 1, './voices/voice.wav', function(err) {
+        if (err) {
+            return console.error(err);
+        }
+
+        convert('./voices/voice.wav', './voices/voice.mp3', function(err){
+            if(!err) {
+                let file = fs.readFileSync('./voices/voice.mp3');
+
+                bot.sendVoice(chatId, file);
+            }
+        });
+    });
+}
+
+
+function isVarMessage(msg) {
+    return msg.indexOf('var:') !== -1;
+}
